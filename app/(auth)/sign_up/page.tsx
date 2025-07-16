@@ -168,7 +168,7 @@ const SignUpPage = () => {
             type="button"
             onClick={handleCustomGoogleClick}
             disabled={googleLoading || !sdkReady}
-            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50"
+            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
           >
             <FaGoogle />
             <span className="ml-2">
@@ -178,7 +178,7 @@ const SignUpPage = () => {
 
           <Button
             type="button"
-            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100"
+            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 cursor-pointer"
           >
             <Slack />
             <span className="ml-2">Sign Up with Slack</span>
