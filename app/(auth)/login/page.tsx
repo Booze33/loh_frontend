@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormSchema } from '@/lib/utils';
+import { SignInFormSchema } from '@/lib/utils';
 import { Form } from '@/components/ui/form';
 import { SignIn } from '@/lib/actions/user.action';
 import { Button } from '@/components/ui/button';
@@ -17,12 +17,11 @@ const LoginPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const router = useRouter();
-    const formSchema = FormSchema();
+    const formSchema = SignInFormSchema();
   
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        name: "",
         email: "",
         password: ""
       },
@@ -37,7 +36,7 @@ const LoginPage = () => {
   
         if (newUser) {
           localStorage.setItem('userEmail', data.email);
-          router.push('/verify_email');
+          router.push('/');
         }
       } catch (error: unknown) {
         console.error("Error during registration:", error);

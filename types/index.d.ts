@@ -1,10 +1,5 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { IconType } from "react-icons";
-
-// User Interface
 export interface User {
   id: string;
-  role?: Role;
   email: string;
   name: string;
   resetToken?: string;
@@ -21,40 +16,42 @@ export interface UsersResponse {
   error?: string;
   timestamp?: string;
 }
-
-declare interface AuthResponse {
-  token?: string;
-  user?: {
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
     name: string;
     email: string;
+    avatar?: string;
+    isEmailVerified: boolean;
   };
   message?: string;
 }
 
-declare interface ForgotPasswordResponse {
+export interface ForgotPasswordResponse {
   message: string;
 }
 
-declare interface ResetPasswordResponse {
+export interface ResetPasswordResponse {
   message: string;
 }
 
-declare type LoggedInContextType = {
+export type LoggedInContextType = {
   isLoggedIn: boolean;
 };
 
-declare type ParamProps = {
+export type ParamProps = {
   params: {
     token: string;
   };
 };
 
-declare type VerifyEmailResponse = {
+export type VerifyEmailResponse = {
   success: boolean;
   message: string;
 };
 
-declare type UserResponse = {
+export type UserResponse = {
   user: {
     id: string;
     name: string;

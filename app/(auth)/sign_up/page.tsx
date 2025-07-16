@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from "react-hook-form";
@@ -9,13 +9,32 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormSchema } from '@/lib/utils';
 import { Form } from '@/components/ui/form';
 import { SignUp } from '@/lib/actions/user.action';
+import { 
+  loadGoogleSDK, 
+  isGoogleSDKLoaded, 
+  initializeGoogleSignIn,
+  authenticateWithGoogle 
+} from '@/lib/utils/google-auth';
 import { Button } from '@/components/ui/button';
 import { FaGoogle } from "react-icons/fa6";
 import { Slack, UserRound, Mail, Lock, UserPen } from 'lucide-react';
 
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+interface GoogleCredentialResponse {
+  credential: string;
+}
+
 const SignUpPage = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [sdkReady, setSdkReady] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const formSchema = FormSchema();
 
@@ -28,6 +47,82 @@ const SignUpPage = () => {
     },
   });
 
+  const handleGoogleSignIn = useCallback(async (response: GoogleCredentialResponse) => {
+    setGoogleLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await authenticateWithGoogle(response.credential);
+      
+      if (result?.user) {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Google sign-in failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : "Google sign-in failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [router]);
+
+  const initializeGoogle = useCallback(async () => {
+    try {
+      if (!isGoogleSDKLoaded()) {
+        await loadGoogleSDK();
+      }
+
+      await initializeGoogleSignIn(handleGoogleSignIn);
+
+      setTimeout(() => {
+        if( googleButtonRef.current && window.google) {
+          console.log('Rendering Google button to:', googleButtonRef.current);
+          window.google.accounts.id.renderButton(
+            googleButtonRef.current,
+            {
+              theme: 'outline',
+              size: 'large',
+              text: 'continue_with',
+              shape: 'rectangular',
+              logo_alignment: 'left',
+              use_fedcm_for_prompt: false,
+              cancel_on_tap_outside: false
+            }
+          );
+        }
+      }, 100)
+
+      setSdkReady(true);
+    } catch (error) {
+      console.error('Failed to initialize Google SDK:', error);
+      setErrorMessage("Failed to load Google authentication");
+    }
+  }, [handleGoogleSignIn]);
+
+  useEffect(() => {
+    initializeGoogle();
+  }, [initializeGoogle]);
+
+  const handleCustomGoogleClick = () => {
+    if (!sdkReady || googleLoading) return;
+
+    const googleButton = googleButtonRef.current?.querySelector('div[role=button]') as HTMLElement;
+    
+    if (googleButton) {
+      googleButton.click();
+    } else if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.prompt();
+      } catch (error) {
+        console.error('Error triggering Google prompt:', error);
+        setErrorMessage('Failed to start Google sign-in. Please try again.');
+      }
+    } else {
+      console.log('Google SDK not fully loaded, attempting to reinitialize');
+      setErrorMessage('Google sign-in not ready. Please wait or refresh the page.');
+      initializeGoogle();
+    }
+  };
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setErrorMessage("");
@@ -36,7 +131,7 @@ const SignUpPage = () => {
       const newUser = await SignUp(data.name, data.email, data.password);
 
       if (newUser) {
-        localStorage.setItem('userEmail', data.email);
+        sessionStorage.setItem('userEmail', data.email);
         router.push('/verify_email');
       }
     } catch (error: unknown) {
@@ -63,12 +158,22 @@ const SignUpPage = () => {
             <p className="text-gray-500 text-sm mt-2">Get started with your personal AI assistant</p>
           </header>
 
+          <div 
+            ref={googleButtonRef} 
+            className="hidden"
+            id="googleButtonContainer"
+          />
+          
           <Button
             type="button"
-            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100"
+            onClick={handleCustomGoogleClick}
+            disabled={googleLoading || !sdkReady}
+            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50"
           >
             <FaGoogle />
-            <span className="ml-2">Sign Up with Google</span>
+            <span className="ml-2">
+              {googleLoading ? "Signing in..." : "Sign Up with Google"}
+            </span>
           </Button>
 
           <Button
@@ -99,7 +204,6 @@ const SignUpPage = () => {
             </div>
           </div>
 
-
           <div className="relative w-full flex flex-col mt-4 group">
             <label htmlFor="email" className="font-bold text-sm">Email</label>
             <div className="relative">
@@ -114,21 +218,19 @@ const SignUpPage = () => {
             </div>
           </div>
 
-
           <div className="relative w-full flex flex-col mt-4 group">
-              <label htmlFor="password" className="font-bold text-sm">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors duration-200 w-4 h-4" />
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="w-full h-10 pl-10 pr-4 mt-1 bg-white border border-gray-200 rounded-md"
-                  {...form.register("password")}
-                />
-              </div>
+            <label htmlFor="password" className="font-bold text-sm">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors duration-200 w-4 h-4" />
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                className="w-full h-10 pl-10 pr-4 mt-1 bg-white border border-gray-200 rounded-md"
+                {...form.register("password")}
+              />
             </div>
-
+          </div>
 
           {errorMessage && (
             <p className="w-full text-red-500 text-sm mt-4 text-center">{errorMessage}</p>

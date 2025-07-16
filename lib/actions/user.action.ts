@@ -1,9 +1,11 @@
 'use server';
 
+import { AuthResponse, ForgotPasswordResponse, ResetPasswordResponse, VerifyEmailResponse } from '@/types';
 import { cookies } from 'next/headers';
 
 const {
-  NEXT_PUBLIC_API_URL: API_URL
+  NEXT_PUBLIC_API_URL: API_URL,
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID
 } = process.env;
 
 export const SignIn = async (email: string, password: string): Promise<AuthResponse> => {
@@ -261,27 +263,22 @@ export const VerifyEmail = async (email: string, verificationCode: string): Prom
   }
 };
 
-export const CreateUser = async (name: string, email: string, password: string, role: string): Promise<UserResponse> => {
+export const GoogleAuth = async (credential: string) => {
   try {
     if (!API_URL) {
-      console.error("API URL is not configured");
       throw new Error("API URL is not configured");
     }
 
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token');
-
-    if (!token) {
-      throw new Error("No authentication token found");
+    if (!credential) {
+      throw new Error("Google credential is required");
     }
 
-    const response = await fetch(`${API_URL}/auth/create`, {
+    const response = await fetch(`${API_URL}/auth/google`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token.value}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ token: credential }),
       cache: 'no-store'
     });
 
@@ -289,52 +286,30 @@ export const CreateUser = async (name: string, email: string, password: string, 
 
     if (!response.ok) {
       const errorData = await responseClone.json();
-      console.error('Error in create user response', errorData);
+      console.error('Error in Google auth response', errorData);
+      throw new Error(errorData.error || "Google authentication failed");
     }
 
-    const data: UserResponse = await response.json();
+    const data: AuthResponse = await response.json();
+
+    if (data.token) {
+      try {
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        cookieStore.set('token', data.token, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 3 });
+        console.log('Google auth token stored successfully');
+      } catch (storeError) {
+        console.error('Error storing Google auth token:', storeError);
+        throw new Error("Failed to store authentication token");
+      }
+    } else {
+      console.error("No token received from Google auth");
+      throw new Error("Authentication failed - no token received");
+    }
+
     return data;
   } catch (error) {
-    console.error("Create user error:", error);
+    console.error("Google authentication error:", error);
     throw error;
   }
-};
-
-export const DeleteUser = async (userId: string): Promise<{ message: string }> => {
-  try {
-    if (!API_URL) {
-      console.error("API URL is not configured");
-      throw new Error("API URL is not configured");
-    }
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token');
-
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_URL}/auth/delete/${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token.value}`,
-        "Content-Type": "application/json",
-      },
-      cache: 'no-store'
-    });
-
-    const responseClone = response.clone();
-
-    if (!response.ok) {
-      const errorData = await responseClone.json();
-      console.error('Error in delete user response', errorData);
-      throw new Error(errorData.message || "Failed to delete user");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Delete user error:", error);
-    throw error;
-  }
-};
+}
