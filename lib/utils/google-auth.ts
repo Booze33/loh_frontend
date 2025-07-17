@@ -1,5 +1,7 @@
 'use client';
 
+import Cookies from 'js-cookie';
+
 export const loadGoogleSDK = () => {
   return new Promise<void>((resolve, reject) => {
     if (typeof window === 'undefined') {
@@ -112,6 +114,7 @@ export const initializeGoogleSignIn = async (callback: (response: any) => void) 
       callback: callback,
       auto_select: false,
       cancel_on_tap_outside: true,
+      use_fedcm_for_prompt: false,
       ux_mode: 'popup',
       // context: 'signup'
     });
@@ -155,9 +158,10 @@ export const authenticateWithGoogle = async (credential: string) => {
     if (!data.token) {
       console.error("No token received from Google auth");
       throw new Error("Authentication failed - no token received");
+    } else {
+      Cookies.set('token', data.token, { secure: true, sameSite: 'strict', expires: 7 });
+      console.log('Token stored successfully');
     }
-
-    console.log('Google Data:', data)
 
     return data;
   } catch (error) {

@@ -74,7 +74,7 @@ const SignUpPage = () => {
       await initializeGoogleSignIn(handleGoogleSignIn);
 
       setTimeout(() => {
-        if( googleButtonRef.current && window.google) {
+        if (googleButtonRef.current && window.google) {
           console.log('Rendering Google button to:', googleButtonRef.current);
           window.google.accounts.id.renderButton(
             googleButtonRef.current,
@@ -88,8 +88,13 @@ const SignUpPage = () => {
               cancel_on_tap_outside: false
             }
           );
+        } else {
+          console.log('Google button ref or window.google not available:', {
+            ref: googleButtonRef.current,
+            google: window.google
+          });
         }
-      }, 100)
+      }, 100);
 
       setSdkReady(true);
     } catch (error) {
@@ -111,7 +116,16 @@ const SignUpPage = () => {
       googleButton.click();
     } else if (window.google?.accounts?.id) {
       try {
-        window.google.accounts.id.prompt();
+        window.google.accounts.id.disableAutoSelect();
+        
+        window.google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            const button = googleButtonRef.current?.querySelector('div[role=button]') as HTMLElement;
+            if (button) {
+              button.click();
+            }
+          }
+        });
       } catch (error) {
         console.error('Error triggering Google prompt:', error);
         setErrorMessage('Failed to start Google sign-in. Please try again.');
@@ -168,7 +182,7 @@ const SignUpPage = () => {
             type="button"
             onClick={handleCustomGoogleClick}
             disabled={googleLoading || !sdkReady}
-            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+            className="w-full flex items-center justify-center mt-2 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50"
           >
             <FaGoogle />
             <span className="ml-2">
@@ -178,7 +192,7 @@ const SignUpPage = () => {
 
           <Button
             type="button"
-            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 cursor-pointer"
+            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100"
           >
             <Slack />
             <span className="ml-2">Sign Up with Slack</span>
