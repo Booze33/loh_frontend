@@ -263,53 +263,36 @@ export const VerifyEmail = async (email: string, verificationCode: string): Prom
   }
 };
 
-export const GoogleAuth = async (credential: string) => {
+export const SlackAuth = async (code: string, state: string) => {
   try {
     if (!API_URL) {
       throw new Error("API URL is not configured");
     }
 
-    if (!credential) {
-      throw new Error("Google credential is required");
-    }
-
-    const response = await fetch(`${API_URL}/auth/google`, {
-      method: "POST",
+    const response = await fetch(`${API_URL}/auth/slack/callback?code=${code}&state=${state}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token: credential }),
       cache: 'no-store'
     });
 
-    const responseClone = response.clone();
-
     if (!response.ok) {
-      const errorData = await responseClone.json();
-      console.error('Error in Google auth response', errorData);
-      throw new Error(errorData.error || "Google authentication failed");
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Authentication failed');
     }
 
     const data: AuthResponse = await response.json();
 
     if (data.token) {
-      try {
-        const { cookies } = await import('next/headers');
-        const cookieStore = await cookies();
-        cookieStore.set('token', data.token, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 3 });
-        console.log('Google auth token stored successfully');
-      } catch (storeError) {
-        console.error('Error storing Google auth token:', storeError);
-        throw new Error("Failed to store authentication token");
-      }
-    } else {
-      console.error("No token received from Google auth");
-      throw new Error("Authentication failed - no token received");
+      const cookieStore = await cookies();
+      cookieStore.set('token', data.token, { secure: true, httpOnly: true });
+      console.log('Token stored successfully');
     }
 
     return data;
   } catch (error) {
-    console.error("Google authentication error:", error);
+    console.error("Slack auth error:", error);
     throw error;
   }
 }

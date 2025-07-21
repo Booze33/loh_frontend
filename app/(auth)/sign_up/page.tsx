@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FaGoogle } from "react-icons/fa6";
 import { Slack, UserRound, Mail, Lock, UserPen } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 declare global {
   interface Window {
@@ -30,13 +31,21 @@ interface GoogleCredentialResponse {
 }
 
 const SignUpPage = () => {
+  const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [slackLoading, setSlackLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const formSchema = FormSchema();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -137,6 +146,19 @@ const SignUpPage = () => {
     }
   };
 
+  const handleSlackSignIn = useCallback(async () => {
+    setSlackLoading(true);
+    setErrorMessage("");
+    try {
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/slack`;
+    } catch (error) {
+      console.error('Slack sign-in failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : "Slack sign-in failed");
+    } finally {
+      setSlackLoading(false);
+    }
+  }, []);
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setErrorMessage("");
@@ -192,10 +214,14 @@ const SignUpPage = () => {
 
           <Button
             type="button"
-            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100"
+            onClick={handleSlackSignIn}
+            disabled={slackLoading}
+            className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 disabled:opacity-50"
           >
             <Slack />
-            <span className="ml-2">Sign Up with Slack</span>
+            <span className="ml-2">
+              {slackLoading ? "Signing in..." : "Sign Up with Slack"}
+            </span>
           </Button>
 
           <div className="w-full flex items-center justify-center mt-8 mb-4">
