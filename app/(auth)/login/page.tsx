@@ -32,6 +32,7 @@ interface GoogleCredentialResponse {
 const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [slackLoading, setSlackLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -62,6 +63,19 @@ const LoginPage = () => {
       setGoogleLoading(false);
     }
   }, [router]);
+
+  const handleSlackSignIn = useCallback(async () => {
+    setSlackLoading(true);
+    setErrorMessage("");
+    try {
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/slack`;
+    } catch (error) {
+      console.error('Slack sign-in failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : "Slack sign-in failed");
+    } finally {
+      setSlackLoading(false);
+    }
+  }, []);
 
   const initializeGoogle = useCallback(async () => {
     try {
@@ -168,7 +182,6 @@ const LoginPage = () => {
             <p className="text-gray-500 text-sm mt-2">Sign in to continue with your personal AI assistant</p>
           </header>
 
-          {/* Hidden Google button container */}
           <div
             ref={googleButtonRef}
             className="hidden"
@@ -189,6 +202,8 @@ const LoginPage = () => {
 
           <Button
             type="button"
+            onClick={handleSlackSignIn}
+            disabled={slackLoading}
             className="w-full flex items-center justify-center mt-4 bg-white border border-gray-200 rounded-md py-2 text-black hover:bg-gray-100 cursor-pointer"
           >
             <Slack />
