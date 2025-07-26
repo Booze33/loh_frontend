@@ -45,7 +45,7 @@ const SlackCallback = () => {
           notifications.success(
             'Success',
             'Authentication successful! Redirecting...',
-            { duration: 0 }
+            { duration: 5000 }
           );
 
           setTimeout(() => {
