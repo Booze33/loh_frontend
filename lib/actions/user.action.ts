@@ -123,7 +123,7 @@ export const GetLoggedInUser = async (): Promise<AuthResponse['user'] | null> =>
     const cookieStore = await cookies();
     const token = cookieStore.get('token');
 
-    if (!token) {
+    if (!token?.value) {
       console.log("No authentication token found");
       return null;
     }
@@ -136,9 +136,15 @@ export const GetLoggedInUser = async (): Promise<AuthResponse['user'] | null> =>
       },
       cache: 'no-store'
     });
-
     if (!response.ok) {
-      console.log("Failed to fetch user data");
+      try {
+        const errorData = await response.json();
+        console.log("Backend error:", errorData);
+      } catch (e) {
+        console.log("Could not parse error response as JSON");
+        const textError = await response.text();
+        console.log("Error response text:", textError);
+      }
       return null;
     }
 

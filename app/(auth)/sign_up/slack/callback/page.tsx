@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SlackAuth } from '@/lib/actions/user.action';
+import { useNotifications } from '@/hooks/notificationStore';
 
 const SlackCallback = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('');
+  const notifications = useNotifications();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -19,13 +20,21 @@ const SlackCallback = () => {
 
         if (error) {
           setStatus('error');
-          setMessage('Authentication was cancelled or failed');
+          notifications.error(
+            'Error occured',
+            "Authentication failed. Please try again.",
+            { duration: 0 }
+          );
           return;
         }
 
         if (!code) {
           setStatus('error');
-          setMessage('No authorization code received');
+          notifications.error(
+            'Error:',
+            "No authorization code received",
+            { duration: 0 }
+          );
           return;
         }
 
@@ -33,7 +42,11 @@ const SlackCallback = () => {
 
         if (response && response.user) {
           setStatus('success');
-          setMessage('Authentication successful! Redirecting...');
+          notifications.success(
+            'Success',
+            'Authentication successful! Redirecting...',
+            { duration: 5000 }
+          );
 
           setTimeout(() => {
             router.push('/');
@@ -41,7 +54,11 @@ const SlackCallback = () => {
         };
       } catch (error) {
         console.error('Slack callback failed:', error);
-        setMessage(error instanceof Error ? error.message : 'Authentication failed');
+        notifications.error(
+          'Slack callback failed:',
+          error instanceof Error ? error.message : 'Authentication failed',
+          { duration: 0 }
+        );
         setStatus('error');
       }
     }
@@ -68,7 +85,6 @@ const SlackCallback = () => {
                 </svg>
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Success!</h2>
-              <p className="text-gray-600">{message}</p>
             </>
           )}
           
@@ -80,7 +96,6 @@ const SlackCallback = () => {
                 </svg>
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Failed</h2>
-              <p className="text-gray-600 mb-4">{message}</p>
               <button 
                 onClick={() => router.push('/login')}
                 className="bg-[#4A154B] hover:bg-[#350d36] text-white px-4 py-2 rounded-md transition-colors"
