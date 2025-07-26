@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FaGoogle } from "react-icons/fa6";
 import { Slack, Mail, Lock, LogIn } from 'lucide-react';
+import { useNotifications } from '@/hooks/notificationStore';
 
 declare global {
   interface Window {
@@ -33,11 +34,11 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [slackLoading, setSlackLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const formSchema = SignInFormSchema();
+  const notifications = useNotifications();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,16 +50,23 @@ const LoginPage = () => {
 
   const handleGoogleSignIn = useCallback(async (response: GoogleCredentialResponse) => {
     setGoogleLoading(true);
-    setErrorMessage("");
     
     try {
       const result = await authenticateWithGoogle(response.credential);
       if (result?.user) {
+        notifications.success(
+          'Google sign-in successful',
+          'You have successfully signed in with Google.',
+          { duration: 5000 }
+        );
         router.push('/');
       }
     } catch (error) {
-      console.error('Google sign-in failed:', error);
-      setErrorMessage(error instanceof Error ? error.message : "Google sign-in failed");
+      notifications.error(
+        'Google sign-in failed',
+        error instanceof Error ? error.message : "Google sign-in failed",
+        { duration: 0 }
+      );
     } finally {
       setGoogleLoading(false);
     }
@@ -66,12 +74,15 @@ const LoginPage = () => {
 
   const handleSlackSignIn = useCallback(async () => {
     setSlackLoading(true);
-    setErrorMessage("");
     try {
       window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/slack`;
     } catch (error) {
       console.error('Slack sign-in failed:', error);
-      setErrorMessage(error instanceof Error ? error.message : "Slack sign-in failed");
+      notifications.error(
+        'Slack sign-in failed',
+        error instanceof Error ? error.message : "Slack sign-in failed",
+        { duration: 0 }
+      );
     } finally {
       setSlackLoading(false);
     }
@@ -110,8 +121,11 @@ const LoginPage = () => {
       
       setSdkReady(true);
     } catch (error) {
-      console.error('Failed to initialize Google SDK:', error);
-      setErrorMessage("Failed to load Google authentication");
+      notifications.error(
+        'Google sign-in failed',
+        error instanceof Error ? error.message : "Failed to load google authentication",
+        { duration: 0}
+      );
     }
   }, [handleGoogleSignIn]);
 
@@ -137,34 +151,43 @@ const LoginPage = () => {
           }
         });
       } catch (error) {
-        console.error('Error triggering Google prompt:', error);
-        setErrorMessage('Failed to start Google sign-in. Please try again.');
+        notifications.error(
+          'Google sign-in failed',
+          error instanceof Error ? error.message : "Failed to start google authentication. Please try again",
+          { duration: 0 }
+        );
       }
     } else {
-      console.log('Google SDK not fully loaded, attempting to reinitialize');
-      setErrorMessage('Google sign-in not ready. Please wait or refresh the page.');
+      notifications.error(
+        'Google sign-in failed',
+        "Google sign-in not ready. Please wait or refresh the page.",
+        { duration: 0 }
+      )
       initializeGoogle();
     }
   };
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    setErrorMessage("");
 
     try {
       const newUser = await SignIn(data.email, data.password);
 
       if (newUser) {
         localStorage.setItem('userEmail', data.email);
+        notifications.success(
+          'Sign-in success',
+          'You have successfully signed in.',
+          { duration: 5000 }
+        );
         router.push('/');
       }
     } catch (error: unknown) {
-      console.error("Error during sign in:", error);
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("An unexpected error occurred. Please try again later.");
-      }
+      notifications.error(
+        'Authetication failed',
+        error instanceof Error ? error.message : "An unexpected error occurred. Please try again later.",
+        { duration: 0 }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -243,10 +266,6 @@ const LoginPage = () => {
               />
             </div>
           </div>
-
-          {errorMessage && (
-            <p className="w-full text-red-500 text-sm mt-4 text-center">{errorMessage}</p>
-          )}
 
           <Button
             type="submit"

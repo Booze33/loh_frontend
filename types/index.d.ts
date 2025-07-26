@@ -6,6 +6,7 @@ export interface User {
   resetTokenExpiry?: Date;
   password: string;
   avatarUrl?: string;
+  isEmailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +27,14 @@ export interface AuthResponse {
     isEmailVerified: boolean;
   };
   message?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  isEmailVerified: boolean;
 }
 
 export interface ForgotPasswordResponse {
@@ -59,3 +68,21 @@ export type UserResponse = {
   };
 };
 
+export interface Notification {
+  id: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  message?: string
+  duration?: number
+  action?: {
+    label: string
+    onClick: () => void
+  }
+}
+
+export interface NotificationState {
+  notifications: Notification[]
+  addNotification: (notification: Omit<Notification, 'id'>) => void
+  removeNotification: (id: string) => void
+  clearAll: () => void
+}

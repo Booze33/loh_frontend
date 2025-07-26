@@ -10,11 +10,12 @@ import { Form } from '@/components/ui/form';
 import { ForgotPassword } from '@/lib/actions/user.action';
 import { Button } from '@/components/ui/button';
 import { Send, Mail } from 'lucide-react';
+import { useNotifications } from '@/hooks/notificationStore';
 
 const ForgotPasswordPage = () => {
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
     const formSchema = PasswordFormSchema();
+    const notifications = useNotifications();
   
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
@@ -25,7 +26,6 @@ const ForgotPasswordPage = () => {
   
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
       setIsLoading(true);
-      setErrorMessage("");
   
       try {
         const newUser = await ForgotPassword(data.email);
@@ -34,12 +34,11 @@ const ForgotPasswordPage = () => {
           localStorage.setItem('userEmail', data.email);
         }
       } catch (error: unknown) {
-        console.error("Error during registration:", error);
-        if (error instanceof Error) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage("An unexpected error occurred. Please try again later.");
-        }
+        notifications.error(
+          'Error during registration',
+          error instanceof Error ? error.message : "An unexpected error occurred. Please try again later.",
+          { duration: 0 }
+        );
       } finally {
         setIsLoading(false);
       }
@@ -71,11 +70,6 @@ const ForgotPasswordPage = () => {
                 />
               </div>
             </div>
-  
-  
-            {errorMessage && (
-              <p className="w-full text-red-500 text-sm mt-4 text-center">{errorMessage}</p>
-            )}
   
             <Button
               type="submit"
