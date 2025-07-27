@@ -1,8 +1,6 @@
 import { create } from 'zustand'
 import { Notification, NotificationState } from '../types'
 
-
-
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   

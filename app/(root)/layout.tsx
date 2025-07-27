@@ -6,6 +6,7 @@ import { GetLoggedInUser } from '@/lib/actions/user.action';
 import { User, AuthUser } from '@/types';
 import Loader from "@/components/loader";
 import { useNotifications } from "@/hooks/notificationStore";
+import Navbar from "@/components/Navbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -70,17 +71,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="w-full">
-      <div className="flex pt-[2%] min-h-screen overflow-hidden w-full">
-
-        <div className=" w-full h-full bg-gray-200 flex flex-col  px-4 py-2">
-          <div className="pt-4">
-
-            <main className="flex-1 overflow-auto pt-8 ">
-              {children}
-            </main>
-          </div>
-        </div>
-      </div>
+      <Navbar />
+      {children}
     </div>
   );
 }

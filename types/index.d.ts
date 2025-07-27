@@ -86,3 +86,13 @@ export interface NotificationState {
   removeNotification: (id: string) => void
   clearAll: () => void
 }
+
+export interface AIStatusStore {
+  status: AIStatus
+  message: string
+  setStatus: (status: AIStatus) => void
+  setListening: () => void
+  setThinking: () => void
+  setResponding: () => void
+  setIdle: () => void
+}
