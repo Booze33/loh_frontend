@@ -1,14 +1,13 @@
+import { string } from "zod";
+
 export interface User {
   id: string;
   email: string;
   name: string;
   resetToken?: string;
   resetTokenExpiry?: Date;
-  password: string;
   avatarUrl?: string;
   isEmailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface UsersResponse {
@@ -67,6 +66,26 @@ export type UserResponse = {
     email: string;
   };
 };
+
+export type Chat = {
+  id: string;
+  userId: string;
+  title: string;
+  chatHandle: string;
+  messages: ChatMessage[];
+  isPinned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ChatMessage = {
+  id: string;
+  sessionId: string;
+  sender: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Notification {
   id: string

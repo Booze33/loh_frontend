@@ -7,6 +7,7 @@ import { User, AuthUser } from '@/types';
 import Loader from "@/components/loader";
 import { useNotifications } from "@/hooks/notificationStore";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -70,9 +71,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="w-full">
+    <div className="w-[100vw] h-[100vh] flex flex-col overflow-hidden">
       <Navbar />
-      {children}
+      <div className="flex flex-row">
+        <Sidebar />
+        {children}
+      </div>
     </div>
   );
 }

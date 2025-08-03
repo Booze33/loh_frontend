@@ -54,6 +54,7 @@ const LoginPage = () => {
     try {
       const result = await authenticateWithGoogle(response.credential);
       if (result?.user) {
+        console.log(result)
         notifications.success(
           'Google sign-in successful',
           'You have successfully signed in with Google.',
