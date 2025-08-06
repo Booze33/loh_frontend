@@ -94,7 +94,7 @@ const Navbar = () => {
   }, [router]);
 
   return (
-    <nav className="absolute top-0 border-b-2 w-full h-[4rem] flex flex-row">
+    <nav className="absolute top-0 border-b-2 w-full h-[4rem] flex flex-row bg-gray-50 dark:bg-gray-900">
         <div className="border-r-2 w-[28vw] h-full flex items-center justify-center">
             <Logo size="lg" />
         </div>

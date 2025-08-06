@@ -83,8 +83,12 @@ export type ChatMessage = {
   sessionId: string;
   sender: string;
   content: string;
-  createdAt: Date;
-  updatedAt: Date;
+  timestamp: string;
+}
+
+export interface ChatInterfaceProps {
+  className?: string;
+  chatId: string;
 }
 
 export interface Notification {
